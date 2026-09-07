@@ -14,6 +14,8 @@ import (
 )
 
 // Client gerencia a comunicação com o Tailscale CLI e daemon.
+// Ele fornece métodos para obter status, executar diagnósticos de rede,
+// e controlar o estado da conexão Tailscale.
 type Client struct {
 	mu           sync.RWMutex
 	tailscaleBin string
@@ -24,6 +26,7 @@ type Client struct {
 }
 
 // NewClient cria uma nova instância de Client.
+// Se socketPath for vazio, usa o socket padrão do sistema (/var/run/tailscale/tailscaled.sock).
 func NewClient(socketPath string) *Client {
 	bin, err := exec.LookPath("tailscale")
 	if err != nil {
@@ -47,6 +50,7 @@ func (c *Client) buildCommand(ctx context.Context, args ...string) *exec.Cmd {
 }
 
 // GetStatus executa `tailscale status --json` e retorna o estado atual.
+// Retorna erro se o daemon não estiver rodando ou se a resposta for inválida.
 func (c *Client) GetStatus(ctx context.Context) (*Status, error) {
 	ctxTimeout, cancel := context.WithTimeout(ctx, 4*time.Second)
 	defer cancel()
@@ -111,6 +115,7 @@ func (c *Client) GetSpeedTracker() *SpeedTracker {
 }
 
 // RunNetcheck executa `tailscale netcheck --format=json` e retorna o diagnóstico de rede.
+// O netcheck verifica conectividade UDP, IPv4, IPv6, latência para DERP servers e tipo de NAT.
 func (c *Client) RunNetcheck(ctx context.Context) (*NetcheckReport, error) {
 	ctxTimeout, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
@@ -149,6 +154,11 @@ func (c *Client) RunNetcheck(ctx context.Context) (*NetcheckReport, error) {
 }
 
 // PingPeer executa `tailscale ping` contra um peer e retorna as linhas de resposta.
+// O parâmetro count define o número de pings a enviar (padrão 4 se <= 0).
+//
+// Retorna as linhas de output mesmo em caso de erro, pois o tailscale ping
+// pode retornar informações úteis mesmo quando o ping falha (ex: peer offline).
+// O erro indica falha na execução do comando, não falha do ping em si.
 func (c *Client) PingPeer(ctx context.Context, target string, count int) ([]string, error) {
 	if count <= 0 {
 		count = 4
@@ -168,10 +178,20 @@ func (c *Client) PingPeer(ctx context.Context, target string, count int) ([]stri
 	}
 
 	lines := strings.Split(strings.TrimSpace(output), "\n")
-	return lines, err
+
+	// Filtrar linhas vazias
+	var result []string
+	for _, line := range lines {
+		if strings.TrimSpace(line) != "" {
+			result = append(result, line)
+		}
+	}
+
+	return result, err
 }
 
-// Connect aciona `tailscale up`.
+// Connect aciona `tailscale up` para conectar à rede Tailscale.
+// Requer que o usuário tenha permissão de operador (configurada via `tailscale set --operator=$USER`).
 func (c *Client) Connect(ctx context.Context) error {
 	ctxTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -192,7 +212,8 @@ func (c *Client) Connect(ctx context.Context) error {
 	return nil
 }
 
-// Disconnect aciona `tailscale down`.
+// Disconnect aciona `tailscale down` para desconectar da rede Tailscale.
+// A conexão pode ser reestabelecida posteriormente com Connect().
 func (c *Client) Disconnect(ctx context.Context) error {
 	ctxTimeout, cancel := context.WithTimeout(ctx, 6*time.Second)
 	defer cancel()
@@ -214,6 +235,8 @@ func (c *Client) Disconnect(ctx context.Context) error {
 }
 
 // SetExitNode configura ou desativa o exit-node da máquina.
+// Passar string vazia ("") desativa o exit-node atual.
+// O exit-node deve ser um peer que oferece essa funcionalidade (ExitNodeOption=true).
 func (c *Client) SetExitNode(ctx context.Context, exitNode string) error {
 	ctxTimeout, cancel := context.WithTimeout(ctx, 6*time.Second)
 	defer cancel()

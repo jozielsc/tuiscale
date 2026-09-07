@@ -8,6 +8,8 @@ import (
 )
 
 // SpeedTracker calcula taxas de transferência (download e upload) ao longo do tempo.
+// Ele mantém snapshots dos contadores anteriores para derivar a taxa instantânea entre chamadas a Update.
+// É seguro para uso concorrente via mutex interno.
 type SpeedTracker struct {
 	mu           sync.Mutex
 	lastCheck    time.Time
@@ -21,7 +23,7 @@ type SpeedTracker struct {
 	CumulativeTx int64
 }
 
-// NewSpeedTracker cria uma nova instância de SpeedTracker.
+// NewSpeedTracker cria uma nova instância de SpeedTracker pronta para uso.
 func NewSpeedTracker() *SpeedTracker {
 	return &SpeedTracker{
 		prevPeerRx: make(map[string]int64),
@@ -29,7 +31,10 @@ func NewSpeedTracker() *SpeedTracker {
 	}
 }
 
-// Update calcula as taxas atuais com base no novo Status retornado pelo Tailscale.
+// Update calcula as taxas instantâneas de Rx/Tx com base no novo Status retornado pelo Tailscale.
+// Na primeira chamada apenas inicializa os contadores de baseline.
+// Protege os campos do SpeedTracker com mutex; os campos SpeedRx/SpeedTx dos peers
+// são escritos diretamente pois pertencem ao status recém-criado do ciclo de atualização.
 func (st *SpeedTracker) Update(status *Status) {
 	if status == nil {
 		return
@@ -83,9 +88,6 @@ func (st *SpeedTracker) Update(status *Status) {
 		st.prevSelfTx = status.Self.TxBytes
 		st.CumulativeRx = status.Self.RxBytes
 		st.CumulativeTx = status.Self.TxBytes
-
-		status.Self.SpeedRx = st.CurrentRx
-		status.Self.SpeedTx = st.CurrentTx
 	}
 
 	// 2. Cálculo por Peer individual

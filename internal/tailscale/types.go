@@ -3,6 +3,7 @@ package tailscale
 import "time"
 
 // Status representa a saída JSON de `tailscale status --json`.
+// Contém informações sobre o estado do daemon, peers da rede e configurações atuais.
 type Status struct {
 	Version        string                   `json:"Version"`
 	TUN            bool                     `json:"TUN"`
@@ -32,7 +33,8 @@ type TailscaleUser struct {
 	DisplayName string `json:"DisplayName"`
 }
 
-// PeerStatus representa as propriedades de um nó (local ou remoto).
+// PeerStatus representa as propriedades de um nó (local ou remoto) na rede Tailscale.
+// Inclui informações de conexão, tráfego e estado atual.
 type PeerStatus struct {
 	ID             string   `json:"ID"`
 	NodeID         int64    `json:"NodeID"`

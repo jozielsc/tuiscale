@@ -37,7 +37,9 @@ type actionResultMsg struct {
 
 type clearToastMsg struct{}
 
-// AppModel é o modelo principal da interface Bubble Tea.
+// AppModel é o modelo principal da interface Bubble Tea seguindo a arquitetura Elm.
+// Gerencia estado global da UI, navegação entre abas, modais e comunicação assíncrona
+// com o daemon Tailscale via Client.
 type AppModel struct {
 	client          *tailscale.Client
 	refreshInterval time.Duration
@@ -78,6 +80,7 @@ type AppModel struct {
 }
 
 // NewAppModel instancia o modelo do TUIScale.
+// Se refresh for <= 0, usa o intervalo padrão de 2 segundos.
 func NewAppModel(client *tailscale.Client, refresh time.Duration) *AppModel {
 	if refresh <= 0 {
 		refresh = 2 * time.Second
@@ -91,12 +94,10 @@ func NewAppModel(client *tailscale.Client, refresh time.Duration) *AppModel {
 	}
 }
 
-// Init inicializa os primeiros comandos assíncronos.
+// Init inicializa a primeira busca de status. O tick de refresh periódico
+// é agendado automaticamente após cada resposta de statusMsg no Update.
 func (m *AppModel) Init() tea.Cmd {
-	return tea.Batch(
-		m.fetchStatusCmd(),
-		m.tickCmd(),
-	)
+	return m.fetchStatusCmd()
 }
 
 func (m *AppModel) tickCmd() tea.Cmd {
@@ -174,7 +175,8 @@ func (m *AppModel) setToast(msg string, isError bool) tea.Cmd {
 	})
 }
 
-// Update processa eventos e mensagens.
+// Update processa todos os eventos e mensagens do Bubble Tea, retornando o modelo
+// atualizado e eventuais comandos assíncronos a executar.
 func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
@@ -182,6 +184,13 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		// Recalcular scroll para manter cursor visível
+		if m.peerTable != nil {
+			visibleRows := m.height - 10 // Aproximação do espaço disponível
+			if visibleRows > 0 {
+				m.peerTable.RecalculateScroll(visibleRows)
+			}
+		}
 		return m, nil
 
 	case statusMsg:
@@ -200,7 +209,7 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.status = msg.status
 			m.peerTable.UpdatePeers(m.status, m.filterText)
 		}
-		cmds = append(cmds, m.tickCmd())
+		cmds = append(cmds, m.tickCmd()) // Agendar próximo tick após processar status
 		return m, tea.Batch(cmds...)
 
 	case netcheckMsg:
@@ -417,7 +426,8 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// View renderiza a interface no terminal.
+// View renderiza o estado atual da interface no terminal.
+// Retorna aviso de redimensionamento quando o terminal for muito pequeno (< 50x15).
 func (m *AppModel) View() string {
 	if m.width < 50 || m.height < 15 {
 		return "Janela do terminal muito pequena para renderizar o TUIScale. Redimensione a janela."

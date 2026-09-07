@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // Copy envia o texto para a área de transferência usando OSC 52 e ferramentas do sistema como fallback.
@@ -22,21 +23,23 @@ func Copy(text string) error {
 	}
 	_, _ = os.Stdout.WriteString(osc52Seq)
 
-	// 2. Tentar utilitários nativos de Linux (Wayland wl-copy ou X11 xclip/xsel) silenciosamente
+	// 2. Tentar utilitários nativos de Linux (Wayland wl-copy ou X11 xclip/xsel)
 	if _, err := exec.LookPath("wl-copy"); err == nil {
 		cmd := exec.Command("wl-copy")
-		cmd.Stdin = os.Stdin
-		go func() {
-			c := exec.Command("wl-copy")
-			c.Stdin = os.Stdin
-			_ = c.Run()
-		}()
-	} else if _, err := exec.LookPath("xclip"); err == nil {
-		go func() {
-			c := exec.Command("xclip", "-selection", "clipboard")
-			c.Stdin = os.Stdin
-			_ = c.Run()
-		}()
+		cmd.Stdin = strings.NewReader(text)
+		return cmd.Run()
+	}
+
+	if _, err := exec.LookPath("xclip"); err == nil {
+		cmd := exec.Command("xclip", "-selection", "clipboard")
+		cmd.Stdin = strings.NewReader(text)
+		return cmd.Run()
+	}
+
+	if _, err := exec.LookPath("xsel"); err == nil {
+		cmd := exec.Command("xsel", "--clipboard", "--input")
+		cmd.Stdin = strings.NewReader(text)
+		return cmd.Run()
 	}
 
 	return nil

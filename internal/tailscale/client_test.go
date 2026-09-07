@@ -1,6 +1,7 @@
 package tailscale
 
 import (
+	"context"
 	"errors"
 	"testing"
 )
@@ -25,4 +26,34 @@ func TestIsDaemonNotRunningError(t *testing.T) {
 			t.Errorf("IsDaemonNotRunningError(%v) = %v; want %v", tt.err, got, tt.expected)
 		}
 	}
+}
+
+func TestBuildCommand(t *testing.T) {
+	// Teste sem socket customizado
+	client := NewClient("")
+	cmd := client.buildCommand(context.Background(), "status", "--json")
+	if cmd.Path == "" {
+		t.Error("expected command path to be set")
+	}
+
+	// Teste com socket customizado
+	clientSocket := NewClient("/custom/socket/path")
+	cmdSocket := clientSocket.buildCommand(context.Background(), "status")
+
+	// Verificar se o socket foi adicionado aos argumentos
+	found := false
+	for _, arg := range cmdSocket.Args {
+		if arg == "--socket=/custom/socket/path" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected socket flag in command args")
+	}
+}
+
+func TestClientImplementsInterface(t *testing.T) {
+	// Teste de compilação para garantir que Client implementa TailscaleClient
+	var _ TailscaleClient = NewClient("")
 }

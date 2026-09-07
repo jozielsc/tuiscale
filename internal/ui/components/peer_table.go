@@ -123,6 +123,25 @@ func (m *PeerTableModel) MoveBottom() {
 	}
 }
 
+// RecalculateScroll ajusta o scroll offset após mudança de tamanho de tela.
+func (m *PeerTableModel) RecalculateScroll(visibleRows int) {
+	if len(m.peers) == 0 {
+		return
+	}
+
+	// Ajustar scroll offset para manter o cursor visível
+	if m.cursor < m.scrollOffset {
+		m.scrollOffset = m.cursor
+	} else if m.cursor >= m.scrollOffset+visibleRows {
+		m.scrollOffset = m.cursor - visibleRows + 1
+	}
+
+	// Garantir que scrollOffset não seja negativo
+	if m.scrollOffset < 0 {
+		m.scrollOffset = 0
+	}
+}
+
 // SelectedPeer retorna o peer atualmente selecionado.
 func (m *PeerTableModel) SelectedPeer() *tailscale.PeerStatus {
 	if len(m.peers) == 0 || m.cursor < 0 || m.cursor >= len(m.peers) {
