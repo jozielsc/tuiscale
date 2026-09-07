@@ -1,0 +1,41 @@
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do código
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+        cache: true          # Ativa o cache de dependências automaticamente
+
+    - name: Verificar se o código está formatado (go fmt)
+      run: |
+        if [ -n "$(gofmt -l .)" ]; then
+          echo "Arquivos não formatados:"
+          gofmt -l .
+          exit 1
+        fi
+
+    - name: Análise estática (go vet)
+      run: go vet ./...
+
+    - name: Baixar dependências
+      run: go mod download
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Testes
+      run: go test -v -race -coverprofile=coverage.out ./...
