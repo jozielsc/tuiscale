@@ -303,4 +303,3 @@ func IsDaemonNotRunningError(err error) bool {
 	}
 	return false
 }
-

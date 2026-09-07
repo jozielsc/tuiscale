@@ -57,17 +57,17 @@ type AppModel struct {
 	filterText string
 
 	// Modais e estados interativos
-	showHelp           bool
-	showPeerDetail     bool
-	showExitNodeModal  bool
-	exitNodeItems      []components.ExitNodeOptionItem
-	exitNodeCursor     int
-	showPingModal      bool
-	pingTargetHost     string
-	pingTargetIP       string
-	pingLines          []string
-	isPingRunning      bool
-	isNetcheckRunning  bool
+	showHelp          bool
+	showPeerDetail    bool
+	showExitNodeModal bool
+	exitNodeItems     []components.ExitNodeOptionItem
+	exitNodeCursor    int
+	showPingModal     bool
+	pingTargetHost    string
+	pingTargetIP      string
+	pingLines         []string
+	isPingRunning     bool
+	isNetcheckRunning bool
 
 	// Mensagens temporárias (toasts)
 	toastMessage string

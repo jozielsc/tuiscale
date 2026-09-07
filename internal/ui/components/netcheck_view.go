@@ -68,12 +68,12 @@ func RenderNetcheckView(report *tailscale.NetcheckReport, isRunning bool, width,
 
 	// 2. Tabela de Latência de Regiões DERP (ordenadas da menor para a maior latência)
 	type derpItem struct {
-		id       int
-		latency  time.Duration
-		isPref   bool
-		city     string
-		country  string
-		code     string
+		id      int
+		latency time.Duration
+		isPref  bool
+		city    string
+		country string
+		code    string
 	}
 
 	var derpList []derpItem

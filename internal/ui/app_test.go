@@ -190,4 +190,3 @@ func TestDaemonWaitViewAndTransitions(t *testing.T) {
 		t.Errorf("active view should show tabs")
 	}
 }
-
