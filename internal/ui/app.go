@@ -70,6 +70,11 @@ type AppModel struct {
 	// Mensagens temporárias (toasts)
 	toastMessage string
 	toastIsError bool
+
+	// Estado do daemon tailscaled
+	daemonWaiting  bool
+	daemonErr      string
+	daemonAttempts int
 }
 
 // NewAppModel instancia o modelo do TUIScale.
@@ -82,6 +87,7 @@ func NewAppModel(client *tailscale.Client, refresh time.Duration) *AppModel {
 		refreshInterval: refresh,
 		peerTable:       components.NewPeerTableModel(),
 		activeTab:       0,
+		daemonWaiting:   true,
 	}
 }
 
@@ -180,9 +186,17 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case statusMsg:
 		if msg.err != nil {
+			m.daemonWaiting = true
+			m.daemonErr = msg.err.Error()
+			m.daemonAttempts++
 			m.toastMessage = "Aviso: " + msg.err.Error()
 			m.toastIsError = true
 		} else {
+			if m.daemonWaiting {
+				m.daemonWaiting = false
+				m.daemonErr = ""
+				cmds = append(cmds, m.setToast("Daemon tailscaled conectado com sucesso!", false))
+			}
 			m.status = msg.status
 			m.peerTable.UpdatePeers(m.status, m.filterText)
 		}
@@ -218,6 +232,17 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		// Se estiver aguardando o daemon, permitir apenas sair (q/ctrl+c) ou tentar novamente (r)
+		if m.daemonWaiting {
+			switch msg.String() {
+			case "ctrl+c", "q":
+				return m, tea.Quit
+			case "r":
+				return m, m.fetchStatusCmd()
+			}
+			return m, nil
+		}
+
 		// 1. Processamento quando o modo de busca está ativo
 		if m.filterMode {
 			switch msg.String() {
@@ -396,6 +421,10 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *AppModel) View() string {
 	if m.width < 50 || m.height < 15 {
 		return "Janela do terminal muito pequena para renderizar o TUIScale. Redimensione a janela."
+	}
+
+	if m.daemonWaiting {
+		return components.RenderDaemonWaitView(m.width, m.height, m.daemonErr, m.daemonAttempts)
 	}
 
 	// 1. Header

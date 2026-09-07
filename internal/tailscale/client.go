@@ -255,3 +255,29 @@ func (c *Client) ToggleShieldsUp(ctx context.Context, enable bool) error {
 	}
 	return nil
 }
+
+// IsDaemonNotRunningError verifica se o erro retornado indica que o daemon tailscaled está inativo ou inacessível.
+func IsDaemonNotRunningError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	patterns := []string{
+		"failed to connect to local tailscaled",
+		"failed to connect to local tailscale daemon",
+		"dial unix",
+		"no such file or directory",
+		"connection refused",
+		"not running",
+		"is tailscaled running",
+		"cannot connect to tailscaled",
+		"tailscale socket",
+	}
+	for _, p := range patterns {
+		if strings.Contains(msg, p) {
+			return true
+		}
+	}
+	return false
+}
+

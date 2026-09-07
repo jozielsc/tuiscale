@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -95,3 +96,98 @@ func TestAppModelViews(t *testing.T) {
 		t.Errorf("Ping view should contain PING title")
 	}
 }
+
+func TestDaemonWaitViewAndTransitions(t *testing.T) {
+	client := tailscale.NewClient("")
+	app := NewAppModel(client, 2*time.Second)
+
+	_, _ = app.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+	// 1. Verificar estado inicial de espera
+	if !app.daemonWaiting {
+		t.Errorf("app should initially be in daemonWaiting state")
+	}
+
+	viewInitial := app.View()
+	if !strings.Contains(viewInitial, "TUIScale") {
+		t.Errorf("initial view should contain 'TUIScale'")
+	}
+
+	// 2. Simular falha de conexão (daemon inativo)
+	daemonErr := errors.New("failed to connect to local tailscaled: dial unix /var/run/tailscale/tailscaled.sock: connect: no such file or directory")
+	_, _ = app.Update(statusMsg{status: nil, err: daemonErr})
+
+	if !app.daemonWaiting {
+		t.Errorf("app should remain in daemonWaiting state after connection error")
+	}
+	if app.daemonAttempts != 1 {
+		t.Errorf("expected daemonAttempts to be 1, got %d", app.daemonAttempts)
+	}
+
+	viewWaiting := app.View()
+	if !strings.Contains(viewWaiting, "SERVIÇO TAILSCALE INATIVO") {
+		t.Errorf("waiting view should contain 'SERVIÇO TAILSCALE INATIVO'")
+	}
+	if !strings.Contains(viewWaiting, "sudo systemctl start tailscaled") {
+		t.Errorf("waiting view should suggest systemctl start tailscaled")
+	}
+	if !strings.Contains(viewWaiting, "sudo rc-service tailscaled start") {
+		t.Errorf("waiting view should suggest rc-service start")
+	}
+	if !strings.Contains(viewWaiting, "sudo tailscaled") {
+		t.Errorf("waiting view should suggest manual execution sudo tailscaled")
+	}
+	if !strings.Contains(viewWaiting, "[q] / [Ctrl+C]") {
+		t.Errorf("waiting view should show exit shortcuts")
+	}
+
+	// 3. Testar atalhos no modo de espera
+	// Pressionar 'q' deve retornar tea.Quit
+	_, cmdQ := app.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	if cmdQ == nil || cmdQ() != tea.Quit() {
+		t.Errorf("expected 'q' to return tea.Quit while in daemonWaiting state")
+	}
+
+	// Pressionar 'ctrl+c' deve retornar tea.Quit
+	_, cmdCtrlC := app.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+	if cmdCtrlC == nil || cmdCtrlC() != tea.Quit() {
+		t.Errorf("expected ctrl+c to return tea.Quit while in daemonWaiting state")
+	}
+
+	// Pressionar 'r' deve disparar verificação imediata
+	_, cmdR := app.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+	if cmdR == nil {
+		t.Errorf("expected 'r' to return a command while in daemonWaiting state")
+	}
+
+	// Pressionar outras teclas como '2' não deve trocar de aba
+	_, _ = app.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'2'}})
+	if app.activeTab != 0 {
+		t.Errorf("expected activeTab to remain 0 while waiting for daemon, got %d", app.activeTab)
+	}
+
+	// 4. Simular recuperação do serviço Tailscale
+	runningStatus := &tailscale.Status{
+		BackendState: "Running",
+		Self: &tailscale.PeerStatus{
+			HostName:     "local-node",
+			OS:           "linux",
+			TailscaleIPs: []string{"100.64.0.1"},
+			Active:       true,
+		},
+	}
+	_, _ = app.Update(statusMsg{status: runningStatus, err: nil})
+
+	if app.daemonWaiting {
+		t.Errorf("daemonWaiting should be false after receiving successful statusMsg")
+	}
+
+	viewActive := app.View()
+	if strings.Contains(viewActive, "SERVIÇO TAILSCALE INATIVO") {
+		t.Errorf("active view should not show daemon waiting screen")
+	}
+	if !strings.Contains(viewActive, "Dispositivos / Peers") {
+		t.Errorf("active view should show tabs")
+	}
+}
+
