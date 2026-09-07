@@ -1,4 +1,4 @@
-# TailscaleTUI
+# TUIScale
 
 Interface de Terminal (TUI) moderna, rápida e elegante escrita em **Go** para monitoramento e controle do **Tailscale** no Linux.
 
@@ -80,7 +80,7 @@ sudo make install
 
 ### Executar diretamente:
 ```bash
-./tailscaletui
+./tuiscale
 ```
 
 ---
@@ -113,7 +113,7 @@ sudo make install
 ## 🛠️ Opções de Linha de Comando (Flags)
 
 ```bash
-tailscaletui [flags]
+tuiscale [flags]
 
 Flags:
   -refresh duration
@@ -121,7 +121,7 @@ Flags:
   -socket string
         Caminho alternativo para o socket do tailscaled (padrão: /var/run/tailscale/tailscaled.sock)
   -v, -version
-        Exibe a versão do TailscaleTUI e encerra
+        Exibe a versão do TUIScale e encerra
 ```
 
 ---

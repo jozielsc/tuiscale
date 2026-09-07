@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"tailscaletui/internal/ui/theme"
+	"tuiscale/internal/ui/theme"
 )
 
 // RenderHelpModal desenha a janela modal de ajuda com todos os atalhos disponíveis.
@@ -15,7 +15,7 @@ func RenderHelpModal(width, height int) string {
 		modalWidth = width - 4
 	}
 
-	title := theme.ModalTitle.Render("ATALHOS DO TECLADO - TAILSCALETUI")
+	title := theme.ModalTitle.Render("ATALHOS DO TECLADO - TUISCALE")
 
 	type shortcut struct {
 		key  string

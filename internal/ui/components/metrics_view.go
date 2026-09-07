@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"tailscaletui/internal/tailscale"
-	"tailscaletui/internal/ui/theme"
+	"tuiscale/internal/tailscale"
+	"tuiscale/internal/ui/theme"
 )
 
 // RenderMetricsView desenha o painel com estatísticas de tráfego, contadores e distribuição por dispositivo.

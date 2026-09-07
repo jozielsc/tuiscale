@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"tailscaletui/internal/tailscale"
-	"tailscaletui/internal/ui/theme"
+	"tuiscale/internal/tailscale"
+	"tuiscale/internal/ui/theme"
 )
 
 // PeerTableModel gerencia o estado da tabela de peers.

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
-	"tailscaletui/internal/tailscale"
-	"tailscaletui/internal/ui/theme"
+	"tuiscale/internal/tailscale"
+	"tuiscale/internal/ui/theme"
 )
 
 // RenderNetcheckView desenha o painel de diagnóstico completo do Tailscale (DERP, NAT, IPv4/IPv6).

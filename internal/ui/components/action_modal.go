@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"tailscaletui/internal/tailscale"
-	"tailscaletui/internal/ui/theme"
+	"tuiscale/internal/tailscale"
+	"tuiscale/internal/ui/theme"
 )
 
 // ExitNodeOptionItem representa uma opção de exit node no modal.

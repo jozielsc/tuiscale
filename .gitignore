@@ -1,5 +1,7 @@
 /bin/
 /tailscaletui
 /tailscaletui-linux-amd64
+/tuiscale
+/tuiscale-linux-amd64
 *.log
 *.out

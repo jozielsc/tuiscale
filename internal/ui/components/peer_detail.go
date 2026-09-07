@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"tailscaletui/internal/tailscale"
-	"tailscaletui/internal/ui/theme"
+	"tuiscale/internal/tailscale"
+	"tuiscale/internal/ui/theme"
 )
 
 // RenderPeerDetail desenha o painel de inspeção minucioso de um peer específico.

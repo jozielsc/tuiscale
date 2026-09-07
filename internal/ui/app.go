@@ -8,10 +8,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"tailscaletui/internal/tailscale"
-	"tailscaletui/internal/ui/clipboard"
-	"tailscaletui/internal/ui/components"
-	"tailscaletui/internal/ui/theme"
+	"tuiscale/internal/tailscale"
+	"tuiscale/internal/ui/clipboard"
+	"tuiscale/internal/ui/components"
+	"tuiscale/internal/ui/theme"
 )
 
 // Tipos de mensagens internas do Bubble Tea
@@ -72,7 +72,7 @@ type AppModel struct {
 	toastIsError bool
 }
 
-// NewAppModel instancia o modelo do TailscaleTUI.
+// NewAppModel instancia o modelo do TUIScale.
 func NewAppModel(client *tailscale.Client, refresh time.Duration) *AppModel {
 	if refresh <= 0 {
 		refresh = 2 * time.Second
@@ -395,7 +395,7 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renderiza a interface no terminal.
 func (m *AppModel) View() string {
 	if m.width < 50 || m.height < 15 {
-		return "Janela do terminal muito pequena para renderizar o TailscaleTUI. Redimensione a janela."
+		return "Janela do terminal muito pequena para renderizar o TUIScale. Redimensione a janela."
 	}
 
 	// 1. Header

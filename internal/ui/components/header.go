@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"tailscaletui/internal/tailscale"
-	"tailscaletui/internal/ui/theme"
+	"tuiscale/internal/tailscale"
+	"tuiscale/internal/ui/theme"
 )
 
 // RenderHeader desenha o banner superior com informações da máquina local, status e velocidade.
@@ -67,7 +67,7 @@ func RenderHeader(status *tailscale.Status, speedTracker *tailscale.SpeedTracker
 
 	// Linha 1: Título do App, Badge de Conexão, Conta
 	leftLine1 := fmt.Sprintf("%s  %s",
-		theme.TitleStyle.Render("TailscaleTUI"),
+		theme.TitleStyle.Render("TUIScale"),
 		statusBadge,
 	)
 	rightLine1 := ""

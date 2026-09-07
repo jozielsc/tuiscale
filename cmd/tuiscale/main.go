@@ -8,8 +8,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"tailscaletui/internal/tailscale"
-	"tailscaletui/internal/ui"
+	"tuiscale/internal/tailscale"
+	"tuiscale/internal/ui"
 )
 
 var (
@@ -21,13 +21,13 @@ var (
 func main() {
 	refreshFlag := flag.Duration("refresh", 2*time.Second, "Intervalo de atualização das métricas e status (ex: 2s, 3s)")
 	socketFlag := flag.String("socket", "", "Caminho do socket do tailscaled (padrão /var/run/tailscale/tailscaled.sock)")
-	versionFlag := flag.Bool("version", false, "Exibe a versão do TailscaleTUI e sai")
-	flag.BoolVar(versionFlag, "v", false, "Exibe a versão do TailscaleTUI e sai (abreviação)")
+	versionFlag := flag.Bool("version", false, "Exibe a versão do TUIScale e sai")
+	flag.BoolVar(versionFlag, "v", false, "Exibe a versão do TUIScale e sai (abreviação)")
 
 	flag.Parse()
 
 	if *versionFlag {
-		fmt.Printf("TailscaleTUI v%s (commit: %s, build date: %s)\n", version, commit, date)
+		fmt.Printf("TUIScale v%s (commit: %s, build date: %s)\n", version, commit, date)
 		return
 	}
 
@@ -49,7 +49,7 @@ func main() {
 	)
 
 	if _, err := p.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Erro na execução do TailscaleTUI: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Erro na execução do TUIScale: %v\n", err)
 		os.Exit(1)
 	}
 }

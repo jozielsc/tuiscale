@@ -6,7 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"tailscaletui/internal/tailscale"
+	"tuiscale/internal/tailscale"
 )
 
 func TestAppModelViews(t *testing.T) {
@@ -47,8 +47,8 @@ func TestAppModelViews(t *testing.T) {
 
 	// 1. Validar renderização da Aba 0 (Peers)
 	view0 := app.View()
-	if !strings.Contains(view0, "TailscaleTUI") {
-		t.Errorf("View should contain app title 'TailscaleTUI'")
+	if !strings.Contains(view0, "TUIScale") {
+		t.Errorf("View should contain app title 'TUIScale'")
 	}
 	if !strings.Contains(view0, "CONECTADO") {
 		t.Errorf("View should contain 'CONECTADO'")

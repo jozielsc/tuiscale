@@ -1,4 +1,4 @@
-module tailscaletui
+module tuiscale
 
 go 1.26.5
 
