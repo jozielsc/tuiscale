@@ -396,7 +396,11 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case "enter":
-			if m.activeTab == 0 && m.peerTable.SelectedPeer() != nil {
+			// Abre o modal de detalhes do peer apenas em telas estreitas (≤ 115 colunas),
+			// onde o painel lateral não está visível. Em telas largas o detalhe já é
+			// renderizado inline ao lado da lista — abrir o modal travaria os atalhos
+			// sem exibir nada visível ao usuário.
+			if m.activeTab == 0 && m.width <= 115 && m.peerTable.SelectedPeer() != nil {
 				m.showPeerDetail = true
 				return m, nil
 			}
