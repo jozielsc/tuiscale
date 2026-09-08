@@ -463,8 +463,7 @@ func (m *AppModel) View() string {
 	// 3. Cálculo do espaço para o corpo principal
 	headerH := lipgloss.Height(headerView)
 	tabH := lipgloss.Height(tabBar)
-	footerH := 1
-	bodyH := m.height - headerH - tabH - footerH - 2
+	bodyH := m.height - headerH - tabH - 3 // -3: margem para footer e borda
 	if bodyH < 5 {
 		bodyH = 5
 	}
@@ -494,11 +493,21 @@ func (m *AppModel) View() string {
 	// 5. Footer
 	footerView := components.RenderFooter(m.toastMessage, m.toastIsError, m.filterMode, m.filterText, m.width)
 
-	// Composição da tela base
+	// Composição da tela com footer fixado no rodapé.
+	// Calcula o espaço sobrando entre o conteúdo superior e a última linha
+	// para garantir que o footer sempre apareça na borda inferior da tela,
+	// independente do tamanho — essencial para janelas pequenas (ex: scratchpad Sway).
+	topSection := lipgloss.JoinVertical(lipgloss.Left, headerView, tabBar, bodyView)
+	topH := lipgloss.Height(topSection)
+	footerLineH := lipgloss.Height(footerView)
+	gap := m.height - topH - footerLineH
+	if gap < 0 {
+		gap = 0
+	}
+
 	mainView := lipgloss.JoinVertical(lipgloss.Left,
-		headerView,
-		tabBar,
-		bodyView,
+		topSection,
+		strings.Repeat("\n", gap),
 		footerView,
 	)
 

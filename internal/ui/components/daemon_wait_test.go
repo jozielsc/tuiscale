@@ -12,7 +12,7 @@ func TestRenderDaemonWaitView(t *testing.T) {
 		t.Errorf("expected initial state to show 'CONECTANDO AO DAEMON'")
 	}
 
-	// 2. Waiting with error and attempts
+	// 2. Waiting with error and attempts (80x24 >= 18 height and >= 50 width → full command block)
 	errMsg := "dial unix /var/run/tailscale/tailscaled.sock: connect: no such file or directory"
 	viewErr := RenderDaemonWaitView(80, 24, errMsg, 2)
 	if !strings.Contains(viewErr, "SERVIÇO TAILSCALE INATIVO") {
@@ -35,5 +35,20 @@ func TestRenderDaemonWaitView(t *testing.T) {
 	}
 	if !strings.Contains(viewErr, "[r]") {
 		t.Errorf("expected retry shortcut")
+	}
+
+	// 3. Tela pequena (scratchpad compacto): não deve travar/crashar e deve conter elementos essenciais
+	viewTiny := RenderDaemonWaitView(40, 10, errMsg, 1)
+	if !strings.Contains(viewTiny, "TUIScale") {
+		t.Errorf("small screen should still show TUIScale title")
+	}
+	if !strings.Contains(viewTiny, "[q]") {
+		t.Errorf("small screen should still show quit shortcut")
+	}
+
+	// 4. Tela ultra-pequena: exibe versão de uma linha
+	viewMicro := RenderDaemonWaitView(25, 4, errMsg, 1)
+	if !strings.Contains(viewMicro, "tailscaled") {
+		t.Errorf("micro screen should mention tailscaled")
 	}
 }

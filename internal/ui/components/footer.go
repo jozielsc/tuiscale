@@ -9,21 +9,25 @@ import (
 )
 
 // RenderFooter desenha a barra de rodapé com atalhos de teclado e mensagens de status (toast).
+// Em telas estreitas os atalhos são reduzidos para os essenciais; o footer nunca some.
 func RenderFooter(toastMsg string, isToastError bool, filterMode bool, filterText string, width int) string {
 	if filterMode {
 		prompt := lipgloss.NewStyle().Bold(true).Foreground(theme.ColorHighlight).Render("Buscar: ")
-		cursor := lipgloss.NewStyle().Blink(true).Foreground(theme.ColorAccent).Render("█")
+		cursor := lipgloss.NewStyle().Foreground(theme.ColorAccent).Render("█")
 		text := lipgloss.NewStyle().Foreground(theme.ColorText).Render(filterText)
-		hint := lipgloss.NewStyle().Foreground(theme.ColorTextDim).Render("  (Pressione [Enter] ou [Esc] para finalizar)")
+		hint := ""
+		if width >= 70 {
+			hint = lipgloss.NewStyle().Foreground(theme.ColorTextDim).Render("  [Enter]/[Esc] para finalizar")
+		}
 		return theme.FooterBar.Width(width).Render(prompt + text + cursor + hint)
 	}
 
-	// Atalhos rápidos
 	renderKey := func(k, desc string) string {
 		return fmt.Sprintf("%s %s", theme.KeyShortcut.Render("["+k+"]"), theme.KeyDesc.Render(desc))
 	}
 
-	shortcuts := []string{
+	// Conjunto completo de atalhos (telas >= 100 colunas)
+	fullShortcuts := strings.Join([]string{
 		renderKey("c", "Conectar"),
 		renderKey("d", "Desconectar"),
 		renderKey("p", "Ping"),
@@ -33,9 +37,33 @@ func RenderFooter(toastMsg string, isToastError bool, filterMode bool, filterTex
 		renderKey("n", "Netcheck"),
 		renderKey("?", "Ajuda"),
 		renderKey("q", "Sair"),
-	}
+	}, "  ")
 
-	shortcutsStr := strings.Join(shortcuts, "  ")
+	// Conjunto reduzido (telas < 100 colunas)
+	shortShortcuts := strings.Join([]string{
+		renderKey("c", "Up"),
+		renderKey("d", "Down"),
+		renderKey("p", "Ping"),
+		renderKey("/", "Buscar"),
+		renderKey("?", "Ajuda"),
+		renderKey("q", "Sair"),
+	}, "  ")
+
+	// Ultra-compacto: apenas os mais críticos (telas muito pequenas)
+	minShortcuts := strings.Join([]string{
+		renderKey("?", "Ajuda"),
+		renderKey("q", "Sair"),
+	}, "  ")
+
+	var shortcutsStr string
+	switch {
+	case width >= 100:
+		shortcutsStr = fullShortcuts
+	case width >= 60:
+		shortcutsStr = shortShortcuts
+	default:
+		shortcutsStr = minShortcuts
+	}
 
 	var toastStr string
 	if toastMsg != "" {
@@ -46,18 +74,13 @@ func RenderFooter(toastMsg string, isToastError bool, filterMode bool, filterTex
 		}
 	}
 
-	// Layout responsivo para rodapé
-	availableSpace := width - lipgloss.Width(shortcutsStr) - 4
-	if toastStr != "" && availableSpace > 10 {
+	if toastStr != "" {
 		gap := width - lipgloss.Width(shortcutsStr) - lipgloss.Width(toastStr) - 3
-		if gap < 1 {
-			gap = 1
+		if gap >= 1 {
+			content := shortcutsStr + strings.Repeat(" ", gap) + toastStr
+			return theme.FooterBar.Width(width).Render(content)
 		}
-		content := shortcutsStr + strings.Repeat(" ", gap) + toastStr
-		return theme.FooterBar.Width(width).Render(content)
-	}
-
-	if toastStr != "" && width < 90 {
+		// Sem espaço para os dois: exibe só o toast
 		return theme.FooterBar.Width(width).Render(toastStr)
 	}
 
