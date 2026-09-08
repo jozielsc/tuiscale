@@ -19,8 +19,23 @@ func RenderPeerDetail(p *tailscale.PeerStatus, width, height int) string {
 	valStyle := lipgloss.NewStyle().Foreground(theme.ColorText)
 	dimValStyle := lipgloss.NewStyle().Foreground(theme.ColorTextMuted)
 
+	// Espaço interno disponível para valores (descontando label ~22, bordas e padding)
+	labelWidth := 22
+	maxVal := width - labelWidth - 4
+	if maxVal < 8 {
+		maxVal = 8
+	}
+
+	// formatRow para valores de TEXTO PURO (sem ANSI). Aplica truncamento seguro.
 	formatRow := func(label, val string) string {
+		val = truncate(val, maxVal)
 		return fmt.Sprintf("%-22s %s", labelStyle.Render(label+":"), valStyle.Render(val))
+	}
+
+	// formatRowStyled para valores JÁ ESTILIZADOS (contêm ANSI). Não trunca para
+	// não corromper as sequências de escape — esses valores são curtos por natureza.
+	formatRowStyled := func(label, styledVal string) string {
+		return fmt.Sprintf("%-22s %s", labelStyle.Render(label+":"), styledVal)
 	}
 
 	var statusTag string
@@ -57,17 +72,17 @@ func RenderPeerDetail(p *tailscale.PeerStatus, width, height int) string {
 		"",
 		formatRow("Nome do Host", p.HostName),
 		formatRow("DNS MagicDNS", strings.TrimSuffix(p.DNSName, ".")),
-		formatRow("Sistema Operacional", theme.FormatOSIcon(strings.ToLower(p.OS))),
-		formatRow("Status de Conexão", statusTag),
+		formatRowStyled("Sistema Operacional", theme.FormatOSIcon(strings.ToLower(p.OS))),
+		formatRowStyled("Status de Conexão", statusTag),
 		formatRow("Endereços Tailscale", ipsStr),
 		formatRow("Usuário Proprietário", p.UserLogin),
 		formatRow("Rota de Rede Atual", routeStr),
-		formatRow("Nó de Saída (Exit Node)", exitNodeStr),
+		formatRowStyled("Nó de Saída (Exit Node)", exitNodeStr),
 		"",
 		theme.SubTitleStyle.Render("Tráfego de Dados:"),
 		formatRow("Total Recebido (Rx)", tailscale.FormatBytes(p.RxBytes)),
 		formatRow("Total Enviado (Tx)", tailscale.FormatBytes(p.TxBytes)),
-		formatRow("Taxa Instantânea", fmt.Sprintf("↓ %s   ↑ %s",
+		formatRowStyled("Taxa Instantânea", fmt.Sprintf("↓ %s   ↑ %s",
 			tailscale.FormatSpeed(p.SpeedRx),
 			tailscale.FormatSpeed(p.SpeedTx),
 		)),
@@ -82,8 +97,12 @@ func RenderPeerDetail(p *tailscale.PeerStatus, width, height int) string {
 	// Adicionar endpoints físicos descobertos se existirem
 	if len(p.Addrs) > 0 {
 		lines = append(lines, "", theme.SubTitleStyle.Render("Endpoints Físicos (STUN/NAT):"))
+		maxAddr := width - 6
+		if maxAddr < 8 {
+			maxAddr = 8
+		}
 		for _, addr := range p.Addrs {
-			lines = append(lines, dimValStyle.Render("  • "+addr))
+			lines = append(lines, dimValStyle.Render("  • "+truncate(addr, maxAddr)))
 		}
 	}
 

@@ -44,27 +44,45 @@ func RenderNetcheckView(report *tailscale.NetcheckReport, isRunning bool, width,
 
 	natType := "Fácil (Mapeamento estável)"
 	if report.MappingVariesByDestIP {
-		natType = theme.BadgeRelay.Render("Difícil / Simétrico (Varia por destino)")
+		natType = theme.BadgeRelay.Render("Difícil / Simétrico")
 	}
 
 	prefCode, prefCity, prefCountry := tailscale.GetDERPLocation(report.PreferredDERP)
 	prefDERPStr := fmt.Sprintf("#%d [%s] %s, %s", report.PreferredDERP, prefCode, prefCity, prefCountry)
 
-	col1 := fmt.Sprintf("%-20s %s\n%-20s %s\n%-20s %s\n%-20s %s",
-		"Conectividade UDP:", boolBadge(report.UDP, "Habilitado", "Bloqueado"),
-		"Suporte IPv4:", boolBadge(report.IPv4, "Disponível", "Indisponível"),
-		"Suporte IPv6:", boolBadge(report.IPv6, "Disponível", "Indisponível"),
-		"Captive Portal:", boolBadge(!report.CaptivePortal, "Nenhum", "Detectado!"),
-	)
+	portMapStr := fmt.Sprintf("UPnP:%t PMP:%t PCP:%t", report.UPnP, report.PMP, report.PCP)
 
-	col2 := fmt.Sprintf("%-20s %s\n%-20s %s\n%-20s %s\n%-20s %s",
-		"IP Público (IPv4):", report.GlobalV4,
-		"Tipo de NAT:", natType,
-		"Port Mapping:", fmt.Sprintf("UPnP:%t PMP:%t PCP:%t", report.UPnP, report.PMP, report.PCP),
-		"DERP Preferido:", lipgloss.NewStyle().Bold(true).Foreground(theme.ColorSuccess).Render(prefDERPStr),
-	)
-
-	diagBlock := lipgloss.JoinHorizontal(lipgloss.Top, col1, "     ", col2)
+	var diagBlock string
+	if width >= 80 {
+		// Layout largo: duas colunas lado a lado
+		col1 := fmt.Sprintf("%-20s %s\n%-20s %s\n%-20s %s\n%-20s %s",
+			"Conectividade UDP:", boolBadge(report.UDP, "Habilitado", "Bloqueado"),
+			"Suporte IPv4:", boolBadge(report.IPv4, "Disponível", "Indisponível"),
+			"Suporte IPv6:", boolBadge(report.IPv6, "Disponível", "Indisponível"),
+			"Captive Portal:", boolBadge(!report.CaptivePortal, "Nenhum", "Detectado!"),
+		)
+		col2 := fmt.Sprintf("%-20s %s\n%-20s %s\n%-20s %s\n%-20s %s",
+			"IP Público (IPv4):", report.GlobalV4,
+			"Tipo de NAT:", natType,
+			"Port Mapping:", portMapStr,
+			"DERP Preferido:", lipgloss.NewStyle().Bold(true).Foreground(theme.ColorSuccess).Render(prefDERPStr),
+		)
+		diagBlock = lipgloss.JoinHorizontal(lipgloss.Top, col1, "     ", col2)
+	} else {
+		// Layout estreito: coluna única com labels abreviadas
+		labelS := func(s string) string {
+			return lipgloss.NewStyle().Foreground(theme.ColorTextMuted).Render(s)
+		}
+		diagBlock = fmt.Sprintf("%s %s\n%s %s\n%s %s\n%s %s\n%s %s\n%s %s\n%s %s",
+			labelS("UDP:"), boolBadge(report.UDP, "Habilitado", "Bloqueado"),
+			labelS("IPv4:"), boolBadge(report.IPv4, "Disponível", "Indisponível"),
+			labelS("IPv6:"), boolBadge(report.IPv6, "Disponível", "Indisponível"),
+			labelS("Captive:"), boolBadge(!report.CaptivePortal, "Nenhum", "Detectado!"),
+			labelS("IP Público:"), report.GlobalV4,
+			labelS("NAT:"), natType,
+			labelS("DERP Pref.:"), lipgloss.NewStyle().Bold(true).Foreground(theme.ColorSuccess).Render(prefDERPStr),
+		)
+	}
 
 	// 2. Tabela de Latência de Regiões DERP (ordenadas da menor para a maior latência)
 	type derpItem struct {

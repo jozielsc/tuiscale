@@ -190,3 +190,35 @@ func TestDaemonWaitViewAndTransitions(t *testing.T) {
 		t.Errorf("active view should show tabs")
 	}
 }
+
+
+func TestSmallWindowGuard(t *testing.T) {
+	client := tailscale.NewClient("")
+
+	// 1. Janela pequena com daemon conectado → mensagem base
+	app := NewAppModel(client, 2*time.Second)
+	_, _ = app.Update(tea.WindowSizeMsg{Width: 40, Height: 10})
+	app.daemonWaiting = false
+	view := app.View()
+	if !strings.Contains(view, "muito pequeno") {
+		t.Errorf("small window with daemon up should show size warning, got: %q", view)
+	}
+	if strings.Contains(view, "tailscaled inativo") {
+		t.Errorf("small window with daemon up should NOT mention daemon inactive")
+	}
+
+	// 2. Janela pequena com daemon INATIVO → inclui dica do daemon
+	app2 := NewAppModel(client, 2*time.Second)
+	_, _ = app2.Update(tea.WindowSizeMsg{Width: 40, Height: 10})
+	// daemonWaiting já é true por padrão em NewAppModel
+	view2 := app2.View()
+	if !strings.Contains(view2, "tailscaled inativo") {
+		t.Errorf("small window with daemon down should mention daemon inactive, got: %q", view2)
+	}
+	if !strings.Contains(view2, "[q]") {
+		t.Errorf("small window with daemon down should show quit shortcut")
+	}
+	if !strings.Contains(view2, "[r]") {
+		t.Errorf("small window with daemon down should show retry shortcut")
+	}
+}

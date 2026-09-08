@@ -44,6 +44,27 @@ func RenderHeader(status *tailscale.Status, speedTracker *tailscale.SpeedTracker
 		account = status.CurrentTailnet.Name
 	}
 
+	// Truncamento dinâmico baseado na largura disponível para evitar que o
+	// header expanda verticalmente com hostnames ou emails muito longos.
+	innerWidth := width - 4
+	if innerWidth < 20 {
+		innerWidth = 20
+	}
+	maxHostLen := innerWidth / 3
+	maxAccLen := innerWidth / 3
+	maxDNSLen := innerWidth / 4
+	if maxHostLen < 10 {
+		maxHostLen = 10
+	}
+	if maxAccLen < 10 {
+		maxAccLen = 10
+	}
+	localHost = truncate(localHost, maxHostLen)
+	account = truncate(account, maxAccLen)
+	if localDNS != "" {
+		localDNS = truncate(localDNS, maxDNSLen)
+	}
+
 	// 3. Velocidade em Tempo Real e Tráfego Acumulado
 	var rxSpeedStr, txSpeedStr, totalRxStr, totalTxStr string
 	if speedTracker != nil {
@@ -90,7 +111,7 @@ func RenderHeader(status *tailscale.Status, speedTracker *tailscale.SpeedTracker
 	}
 
 	// Ajuste de largura e alinhamento
-	innerWidth := width - 4
+	innerWidth = width - 4
 	if innerWidth < 40 {
 		innerWidth = 40
 	}

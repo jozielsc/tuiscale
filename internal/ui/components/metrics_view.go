@@ -41,11 +41,24 @@ func RenderMetricsView(status *tailscale.Status, speedTracker *tailscale.SpeedTr
 		keyStatus = "Ausente / Expirada"
 	}
 
-	secSummary := fmt.Sprintf("%-22s %d nós na tailnet\n%-22s %s\n%-22s %s\n%-22s %s",
-		"Total de Dispositivos:", totalPeers,
-		"Status dos Nós:", fmt.Sprintf("🟢 %d Diretos  |  🔵 %d Relay  |  ⚪ %d Offline", directPeers, relayPeers, offlinePeers),
-		"Dispositivo de Rede:", tunStr,
-		"Chave de Criptografia:", keyStatus,
+	// Labels e formato adaptados à largura disponível
+	var labelFmt string
+	if width >= 80 {
+		labelFmt = "%-22s"
+	} else {
+		labelFmt = "%-16s"
+		// Versão compacta de alguns valores para telas estreitas
+		tunStr = "Habilitado"
+		if !status.TUN {
+			tunStr = "Desabilitado"
+		}
+	}
+
+	secSummary := fmt.Sprintf(labelFmt+" %d nós na tailnet\n"+labelFmt+" %s\n"+labelFmt+" %s\n"+labelFmt+" %s",
+		"Total Dispositivos:", totalPeers,
+		"Status dos Nós:", fmt.Sprintf("🟢 %d Dir  🔵 %d Relay  ⚪ %d Off", directPeers, relayPeers, offlinePeers),
+		"Rede (TUN):", tunStr,
+		"Chave:", keyStatus,
 	)
 
 	// 2. Tráfego Atual e Acumulado
@@ -58,17 +71,26 @@ func RenderMetricsView(status *tailscale.Status, speedTracker *tailscale.SpeedTr
 		cumTx = speedTracker.CumulativeTx
 	}
 
-	secTraffic := fmt.Sprintf("%-22s %s\n%-22s %s\n%-22s %s\n%-22s %s",
-		"Taxa de Download (Rx):", theme.SpeedRxStyle.Render(tailscale.FormatSpeed(curRx)),
-		"Taxa de Upload (Tx):", theme.SpeedTxStyle.Render(tailscale.FormatSpeed(curTx)),
-		"Download Acumulado:", tailscale.FormatBytes(cumRx),
-		"Upload Acumulado:", tailscale.FormatBytes(cumTx),
+	secTraffic := fmt.Sprintf(labelFmt+" %s\n"+labelFmt+" %s\n"+labelFmt+" %s\n"+labelFmt+" %s",
+		"Download (Rx):", theme.SpeedRxStyle.Render(tailscale.FormatSpeed(curRx)),
+		"Upload (Tx):", theme.SpeedTxStyle.Render(tailscale.FormatSpeed(curTx)),
+		"Total Download:", tailscale.FormatBytes(cumRx),
+		"Total Upload:", tailscale.FormatBytes(cumTx),
 	)
 
-	cardBlock := lipgloss.JoinHorizontal(lipgloss.Top,
-		theme.Panel.Width((width/2)-2).Render(theme.TitleStyle.Render("RESUMO DA REDE")+"\n\n"+secSummary),
-		theme.Panel.Width((width/2)-2).Render(theme.TitleStyle.Render("TRÁFEGO DE DADOS")+"\n\n"+secTraffic),
-	)
+	// Layout dos cards: lado a lado para width>=80, empilhado para width<80
+	var cardBlock string
+	if width >= 80 {
+		cardBlock = lipgloss.JoinHorizontal(lipgloss.Top,
+			theme.Panel.Width((width/2)-2).Render(theme.TitleStyle.Render("RESUMO DA REDE")+"\n\n"+secSummary),
+			theme.Panel.Width((width/2)-2).Render(theme.TitleStyle.Render("TRÁFEGO DE DADOS")+"\n\n"+secTraffic),
+		)
+	} else {
+		cardBlock = lipgloss.JoinVertical(lipgloss.Left,
+			theme.Panel.Width(width-4).Render(theme.TitleStyle.Render("RESUMO DA REDE")+"\n\n"+secSummary),
+			theme.Panel.Width(width-4).Render(theme.TitleStyle.Render("TRÁFEGO DE DADOS")+"\n\n"+secTraffic),
+		)
+	}
 
 	// 3. Top Dispositivos por Consumo de Tráfego (Rx + Tx)
 	type peerTraffic struct {
@@ -101,7 +123,15 @@ func RenderMetricsView(status *tailscale.Status, speedTracker *tailscale.SpeedTr
 	}
 
 	var rankingRows []string
-	rankingHeader := fmt.Sprintf("  %-22s %-16s %-16s %-24s", "DISPOSITIVO", "DOWNLOAD (RX)", "UPLOAD (TX)", "PROPORÇÃO")
+	// Layout do ranking adaptado à largura: em telas estreitas omite a coluna
+	// de proporção (barra) e reduz larguras das colunas de nome/tráfego.
+	narrowRanking := width < 80
+	var rankingHeader string
+	if narrowRanking {
+		rankingHeader = fmt.Sprintf("  %-18s %-12s %-12s", "DISPOSITIVO", "RX", "TX")
+	} else {
+		rankingHeader = fmt.Sprintf("  %-22s %-16s %-16s %-24s", "DISPOSITIVO", "DOWNLOAD (RX)", "UPLOAD (TX)", "PROPORÇÃO")
+	}
 	rankingRows = append(rankingRows, theme.TableHeader.Render(rankingHeader))
 
 	maxRows := height - 14
@@ -113,6 +143,16 @@ func RenderMetricsView(status *tailscale.Status, speedTracker *tailscale.SpeedTr
 	}
 
 	for _, pt := range trafficList {
+		if narrowRanking {
+			// Sem barra de proporção; nome truncado
+			row := fmt.Sprintf("  %-18s %-12s %-12s",
+				truncate(pt.name, 18),
+				tailscale.FormatBytes(pt.rxBytes),
+				tailscale.FormatBytes(pt.txBytes),
+			)
+			rankingRows = append(rankingRows, row)
+			continue
+		}
 		barLen := 18
 		ratio := float64(pt.totalBytes) / float64(maxBytes)
 		filled := int(ratio * float64(barLen))

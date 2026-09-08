@@ -3,6 +3,8 @@ package components
 import (
 	"strings"
 	"testing"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func TestRenderDaemonWaitView(t *testing.T) {
@@ -37,7 +39,7 @@ func TestRenderDaemonWaitView(t *testing.T) {
 		t.Errorf("expected retry shortcut")
 	}
 
-	// 3. Tela pequena (scratchpad compacto): não deve travar/crashar e deve conter elementos essenciais
+	// 3. Tela pequena: não deve travar/crashar e deve conter elementos essenciais
 	viewTiny := RenderDaemonWaitView(40, 10, errMsg, 1)
 	if !strings.Contains(viewTiny, "TUIScale") {
 		t.Errorf("small screen should still show TUIScale title")
@@ -51,4 +53,34 @@ func TestRenderDaemonWaitView(t *testing.T) {
 	if !strings.Contains(viewMicro, "tailscaled") {
 		t.Errorf("micro screen should mention tailscaled")
 	}
+
+	// 5. Validação crítica: o mainBox nunca deve exceder a altura da janela.
+	// lipgloss.Place retorna height quando cabe, ou o conteúdo quando não cabe —
+	// por isso medimos o min(rendered, height) para verificar que o box em si cabe.
+	sizes := [][2]int{
+		{220, 50}, {140, 40}, {110, 35}, {80, 24},
+		{70, 20}, {60, 18}, {50, 15}, {45, 12}, {30, 10},
+	}
+	for _, sz := range sizes {
+		w, h := sz[0], sz[1]
+		v := RenderDaemonWaitView(w, h, errMsg, 3)
+		rendered := lipgloss.Height(v)
+		// Place preenche até height quando o conteúdo é menor.
+		// Quando o conteúdo é maior, retorna o conteúdo sem truncar.
+		// O que garantimos é que o conteúdo seja <= height.
+		if rendered > h {
+			t.Errorf("DaemonWait %dx%d: rendered height %d exceeds available %d", w, h, rendered, h)
+		}
+	}
+
+	// 6. Shortcuts sempre aparecem independente do tamanho
+	criticalSizes := [][2]int{{80, 24}, {60, 18}, {50, 15}, {45, 12}}
+	for _, sz := range criticalSizes {
+		w, h := sz[0], sz[1]
+		v := RenderDaemonWaitView(w, h, errMsg, 1)
+		if !strings.Contains(v, "[q]") {
+			t.Errorf("DaemonWait %dx%d: shortcuts missing from output", w, h)
+		}
+	}
 }
+

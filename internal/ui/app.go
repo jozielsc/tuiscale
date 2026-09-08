@@ -434,7 +434,19 @@ func (m *AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // Retorna aviso de redimensionamento quando o terminal for muito pequeno (< 50x15).
 func (m *AppModel) View() string {
 	if m.width < 50 || m.height < 15 {
-		return "Janela do terminal muito pequena para renderizar o TUIScale. Redimensione a janela."
+		// Mensagem base para janela abaixo do tamanho mínimo funcional
+		base := "Terminal muito pequeno (mín. 50x15). Redimensione a janela."
+
+		// Se o daemon estiver inativo, informa o estado e os atalhos essenciais
+		// para que o usuário não fique sem contexto do problema real.
+		if m.daemonWaiting {
+			hint := "tailscaled inativo — [q] sair  [r] tentar novamente"
+			if m.width >= 30 && m.height >= 2 {
+				return base + "\n" + hint
+			}
+			return hint
+		}
+		return base
 	}
 
 	if m.daemonWaiting {
