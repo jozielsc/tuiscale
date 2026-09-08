@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"tuiscale/internal/ui/theme"
+	"github.com/jozielsc/tuiscale/internal/ui/theme"
 )
 
 // RenderPingModal desenha o modal com o resultado do comando `tailscale ping`.

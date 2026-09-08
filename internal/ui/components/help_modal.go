@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"tuiscale/internal/ui/theme"
+	"github.com/jozielsc/tuiscale/internal/ui/theme"
 )
 
 // RenderHelpModal desenha a janela modal de ajuda com todos os atalhos disponíveis.

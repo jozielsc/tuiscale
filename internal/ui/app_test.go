@@ -7,7 +7,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"tuiscale/internal/tailscale"
+	"github.com/jozielsc/tuiscale/internal/tailscale"
 )
 
 func TestAppModelViews(t *testing.T) {

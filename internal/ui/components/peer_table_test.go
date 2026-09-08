@@ -3,7 +3,7 @@ package components
 import (
 	"testing"
 
-	"tuiscale/internal/tailscale"
+	"github.com/jozielsc/tuiscale/internal/tailscale"
 )
 
 func TestPeerTableModelFilteringAndSorting(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"tuiscale/internal/tailscale"
-	"tuiscale/internal/ui"
+	"github.com/jozielsc/tuiscale/internal/tailscale"
+	"github.com/jozielsc/tuiscale/internal/ui"
 )
 
 var (

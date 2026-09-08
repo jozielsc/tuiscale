@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"tuiscale/internal/ui/theme"
+	"github.com/jozielsc/tuiscale/internal/ui/theme"
 )
 
 // RenderFooter desenha a barra de rodapé com atalhos de teclado e mensagens de status (toast).

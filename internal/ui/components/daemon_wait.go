@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"tuiscale/internal/ui/theme"
+	"github.com/jozielsc/tuiscale/internal/ui/theme"
 )
 
 // RenderDaemonWaitView desenha a tela amigável informando que o daemon tailscaled está inativo e aguardando inicialização.

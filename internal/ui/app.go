@@ -8,10 +8,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"tuiscale/internal/tailscale"
-	"tuiscale/internal/ui/clipboard"
-	"tuiscale/internal/ui/components"
-	"tuiscale/internal/ui/theme"
+	"github.com/jozielsc/tuiscale/internal/tailscale"
+	"github.com/jozielsc/tuiscale/internal/ui/clipboard"
+	"github.com/jozielsc/tuiscale/internal/ui/components"
+	"github.com/jozielsc/tuiscale/internal/ui/theme"
 )
 
 // Tipos de mensagens internas do Bubble Tea
