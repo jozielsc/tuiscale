@@ -64,6 +64,12 @@ sudo tailscale set --operator=$USER
 
 ## 🚀 Instalação e Compilação
 
+### Via `go install` (recomendado — requer Go 1.21+):
+```bash
+go install github.com/jozielsc/tuiscale/cmd/tuiscale@latest
+```
+O binário será instalado em `$GOPATH/bin/tuiscale` (normalmente `~/go/bin/tuiscale`).
+
 ### Compilação Rápida com `make`:
 ```bash
 # Compilar binário padrão
