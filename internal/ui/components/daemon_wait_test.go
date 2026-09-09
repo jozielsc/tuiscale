@@ -83,4 +83,3 @@ func TestRenderDaemonWaitView(t *testing.T) {
 		}
 	}
 }
-

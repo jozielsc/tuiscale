@@ -191,7 +191,6 @@ func TestDaemonWaitViewAndTransitions(t *testing.T) {
 	}
 }
 
-
 func TestSmallWindowGuard(t *testing.T) {
 	client := tailscale.NewClient("")
 
